@@ -39,7 +39,7 @@ h2{margin:6px 0 4px}
 .bird small{color:var(--mut);direction:ltr;display:block}
 .shop label{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px dashed var(--line)}
 .shop input[type=checkbox]{width:20px;height:20px}
-.shop .done{text-decoration:line-through;color:var(--mut)}
+.shop .it{flex:1;min-width:0;border:0;border-bottom:1px dashed transparent;background:transparent;font:inherit;color:inherit;padding:2px 4px}.shop .it:focus{border-bottom-color:var(--g);outline:0}.shop .done{text-decoration:line-through;color:var(--mut)}
 .shop form{display:flex;gap:6px;margin-top:8px}
 .shop input[type=text],textarea{flex:1;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 textarea{width:100%;min-height:90px}
@@ -216,11 +216,12 @@ R.supp = () => `<h2>ספקי אוכל</h2><p class="sub">פיצריות, קיי�
 R.shop = () => {
   const data = st.get('shop2', SHOP0);
   const done = st.get('done', {});
-  return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה, הוסיפו פריטים. נשמר במכשיר.</p><div class="shop">` +
-   Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><span class="${done[g+'|'+it]?'done':''}">${esc(it)}</span><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
+  return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה. לחיצה על שם או כמות מאפשרת לערוך אותם. נשמר במכשיר.</p><div class="shop">` +
+   Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><input type="text" class="it ${done[g+'|'+it]?'done':''}" value="${esc(it)}" aria-label="שם וכמות" onchange="editItem(${gi},${i},this.value)"><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
 };
 const keys = () => Object.keys(st.get('shop2', SHOP0));
 window.tick=(gi,i,v)=>{const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{});c[g+'|'+d[g][i]]=v;st.set('done',c);render()};
+window.editItem=(gi,i,v)=>{v=v.trim();const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{}),o=d[g][i];if(!v){return render()}d[g][i]=v;if(c[g+'|'+o]){delete c[g+'|'+o];c[g+'|'+v]=true;st.set('done',c)}st.set('shop2',d);render()};
 window.delItem=(gi,i)=>{const d=st.get('shop2',SHOP0);d[keys()[gi]].splice(i,1);st.set('shop2',d);render()};
 window.addItem=(e,gi)=>{e.preventDefault();const v=e.target.querySelector('input').value.trim();if(!v)return;const d=st.get('shop2',SHOP0);d[keys()[gi]].push(v);st.set('shop2',d);render()};
 
