@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>טיול משפחת קרן בצפון</title>
+<meta name="theme-color" content="#2f5d3a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f3ea;--card:#fff;--ink:#23301f;--mut:#667060;--g:#2f5d3a;--g2:#e3eed9;--acc:#d9822b;--line:#e2dccb}
+@media(prefers-color-scheme:dark){:root:not([data-x]){--bg:#161c15;--card:#20291e;--ink:#eaf0e3;--mut:#a3ae9b;--g:#8fc99a;--g2:#2a3a28;--acc:#f0a050;--line:#334030}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Heebo,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--g);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px}
+header h1{font-size:1.05rem;margin:0;flex:1;font-weight:800}
+.hotel{background:var(--acc);color:#fff;border:0;border-radius:99px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+nav{position:sticky;top:52px;z-index:4;background:var(--card);border-bottom:1px solid var(--line);display:flex;overflow-x:auto;gap:4px;padding:6px 10px;scrollbar-width:none}
+nav a{flex:none;padding:6px 12px;border-radius:99px;color:var(--ink);text-decoration:none;font-size:.93rem}
+nav a.on{background:var(--g);color:#fff}
+main{max-width:860px;margin:0 auto;padding:16px}
+h2{margin:6px 0 4px}
+.sub{color:var(--mut);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+.card h3{margin:0 0 4px;font-size:1.05rem}
+.tag{display:inline-block;background:var(--g2);color:var(--g);border-radius:99px;padding:1px 10px;font-size:.8rem;margin-inline-end:4px}
+.warn{background:#fff3d6;color:#6b4a00;border:1px solid #f0d58a;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:.92rem}
+@media(prefers-color-scheme:dark){.warn{background:#3a3115;color:#f3dd9c;border-color:#5c4e1d}}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.links a,.btn{background:var(--g2);color:var(--g);text-decoration:none;border-radius:8px;padding:5px 11px;font-size:.88rem;border:0;font-family:inherit;cursor:pointer}
+.day{border-inline-start:5px solid var(--g);}
+.slot{display:flex;gap:10px;padding:6px 0;border-top:1px dashed var(--line)}
+.slot b{min-width:78px;color:var(--g)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.bird{padding:0;overflow:hidden}
+.bird .im{aspect-ratio:4/3;background:var(--g2);display:flex;align-items:center;justify-content:center;font-size:2.4rem}
+.bird img{width:100%;height:100%;object-fit:cover;display:block}
+.bird .tx{padding:10px 12px}
+.bird small{color:var(--mut);direction:ltr;display:block}
+.shop label{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px dashed var(--line)}
+.shop input[type=checkbox]{width:20px;height:20px}
+.shop .done{text-decoration:line-through;color:var(--mut)}
+.shop form{display:flex;gap:6px;margin-top:8px}
+.shop input[type=text],textarea{flex:1;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{width:100%;min-height:90px}
+.x{margin-inline-start:auto;background:none;border:0;color:var(--mut);cursor:pointer;font-size:1.1rem}
+.tl li{margin:6px 0}
+section{display:none}section.on{display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 טיול משפחת קרן · צפון</h1>
+  <button class="hotel" onclick="go('hotel')">🏡 האחוזה</button>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+
+<script>
+/* ===== נתונים — כאן עורכים ===== */
+const HOTEL = {name:'אחוזת הטואל', place:'שדה אליעזר'}; // ponytail: אם שם המקום שונה בגוגל מפות, לתקן כאן
+const DATES = 'חמישי 3.12 – שבת 5.12.2026';
+const q = s => encodeURIComponent(s);
+const maps = s => `https://www.google.com/maps/search/?api=1&query=${q(s)}`;
+const waze = s => `https://waze.com/ul?q=${q(s)}&navigate=yes`;
+const L = (s, label='📍 מפה') => `<a href="${maps(s)}" target="_blank" rel="noopener">${label}</a><a href="${waze(s)}" target="_blank" rel="noopener">🚗 Waze</a>`;
+
+const PLAN = [
+ {d:'יום חמישי · 3.12', slots:[
+  ['אחה"צ','הגעה, התמקמות באחוזה'],
+  ['ערב','ארוחת ערב קלה + הזמנת פיצות (ראו "ספקי אוכל")'],
+ ]},
+ {d:'יום שישי · 4.12', slots:[
+  ['בוקר','ארוחת בוקר משותפת'],
+  ['לפני הצהריים','פתוח — יוחלט בהמשך לפי האטרקציות (ראו "אטרקציות")'],
+  ['15:00–16:00','סיור באגמון החולה ⚠️ ראו אזהרה'],
+  ['ערב','קבלת שבת וארוחת ערב באחוזה (להשלים)'],
+ ], warn:'כניסת שבת בצפון בתחילת דצמבר היא סביב 16:15 ובערך. סיור שמתחיל ב-15:00–16:00 קצר מדי, ובשישי האגמון נסגר מוקדם — כדאי להקדים לסביבות 13:00, או לאשר מול האתר שעת סגירה. שעון: בדקו בהיברו-קל/חב"ד.'},
+ {d:'שבת · 5.12', slots:[
+  ['בוקר','ארוחת בוקר'],
+  ['צהריים','אחד האתרים הפתוחים בשבת (ראו "אטרקציות"): שמורת החולה / אגמון (עד 16:00) / ראש פינה (10:00–14:00)'],
+  ['ערב (אחרי צאת השבת)','על האש 🔥 — רשימת קניות ב"קניות"'],
+ ]},
+];
+
+const PARKS='https://www.parks.org.il/reserve-park/';
+const ATTR = [
+ {top:1,n:'אגמון החולה',t:['פתוח בשבת','מישורי','אופניים'],d:'10–20 דק׳ מהאחוזה. מסלול מישורי וסלול, אופניים ורכבים חשמליים. 35 ₪ מבוגר / 21 ₪ ילד. שבת 6:30–16:00. הכי יפה לפני השקיעה כשהעגורים חוזרים ללון.',q:'אגמון החולה',u:'https://agamon-hula.co.il/'},
+ {top:1,n:'שמורת החולה',t:['פתוח בשבת','מונגש'],d:'כ-10 דק׳. השביל המעגלי מונגש. 40 ₪ מבוגר / 25 ₪ ילד. שמורת הטבע הראשונה בישראל (1964).',q:'שמורת החולה',u:PARKS+'%D7%A9%D7%9E%D7%95%D7%A8%D7%AA-%D7%98%D7%91%D7%A2-%D7%94%D7%97%D7%95%D7%9C%D7%94/'},
+ {top:1,n:'תל דן',t:['פתוח בשבת','מונגש','מים'],d:'כ-40 דק׳. שבילים מונגשים ובריכות שכשוך. 31 ₪ מבוגר / 16 ₪ ילד. מומלץ להירשם מראש.',q:'שמורת תל דן',u:PARKS+'%D7%A9%D7%9E%D7%95%D7%A8%D7%AA-%D7%98%D7%91%D7%A2-%D7%AA%D7%9C-%D7%93%D7%9F/'},
+ {top:1,n:'בניאס',t:['פתוח בשבת','מעיינות'],d:'כ-40 דק׳. אזור המעיינות נוח יותר למבוגרים מאשר המפל.',q:'שמורת הבניאס',u:PARKS+'%D7%A9%D7%9E%D7%95%D7%A8%D7%AA-%D7%98%D7%91%D7%A2-%D7%A0%D7%97%D7%9C-%D7%97%D7%A8%D7%9E%D7%95%D7%9F-%D7%91%D7%A0%D7%99%D7%90%D7%A1/'},
+ {top:1,n:'מושבת הראשונים בראש פינה',t:['פתוח בשבת','היסטוריה'],d:'כ-10 דק׳. בשבת פתוח 10:00–14:00. אחת המושבות הראשונות (1882).',q:'ראש פינה מושבת הראשונים',u:'https://www.roshpina.org.il/%D7%9E%D7%94-%D7%91%D7%90%D7%AA%D7%A8/'},
+ {top:1,n:'המשושים',t:['פתוח בשבת','נוף'],d:'כ-35 דק׳. שביל התצפית הקצר מונגש. הירידה לבריכה רק למי שהולך טוב, וגם זה רק כשיבש.',q:'שמורת נחל המשושים',u:PARKS+'%D7%A9%D7%9E%D7%95%D7%A8%D7%AA-%D7%98%D7%91%D7%A2-%D7%A0%D7%97%D7%9C-%D7%94%D7%9E%D7%A9%D7%95%D7%A9%D7%99%D7%9D/'},
+ {n:'תל חי וכפר גלעדי',t:['היסטוריה'],d:'אתר ההגנה של טרומפלדור (1920), האריה השואג, מוזיאון.',q:'תל חי'},
+ {n:'צפת — העיר העתיקה',t:['היסטוריה'],d:'כ-25 דק׳. סמטאות ובתי כנסת קדומים. ⚠️ ברוב הגלריות סגור בשבת.',q:'צפת העיר העתיקה'},
+ {n:'מצודת נמרוד',t:['היסטוריה','נוף'],d:'מבצר צלבני-איובי בחרמון עם נוף פנורמי. לאמת שעות.',q:'מצודת נמרוד'},
+ {n:'החרמון',t:['שלג?'],d:'אם יש שלג בדצמבר — יום שלג. לבדוק מצב לפני נסיעה.',q:'אתר החרמון'},
+];
+
+const REST = [
+ {n:'פינה ברוש',t:['איטלקי','ראש פינה'],d:'מסעדה ידועה בראש פינה. להזמין מראש.',q:'פינה ברוש ראש פינה'},
+ {n:'דג על הדן',t:['דגים','קיבוץ דן'],d:'מסעדת דגים ליד מעיינות הדן.',q:'דג על הדן'},
+];
+const REST_SEARCH = [
+ ['חומוס ובשרים בקרית שמונה','מסעדות בשריות קרית שמונה'],
+ ['מסעדות ביסוד המעלה','מסעדות יסוד המעלה'],
+ ['מסעדות בראש פינה','מסעדות ראש פינה'],
+ ['קפה/בראנץ׳ בגליל העליון','בית קפה גליל עליון'],
+];
+
+const SUPP = {
+ pizza:{h:'🍕 פיצריות — להזמנת יום חמישי',ph:[
+   ['פיצריות סביב שדה אליעזר','פיצריה שדה אליעזר'],
+   ['פיצריות בקרית שמונה','פיצריה קרית שמונה'],
+   ['פיצריות ביסוד המעלה','פיצריה יסוד המעלה'],
+   ['פיצריות בראש פינה','פיצריה ראש פינה']]},
+ cater:{h:'🍽️ קייטרינג',ph:[
+   ['קייטרינג בגליל העליון','קייטרינג גליל עליון'],
+   ['על האש / בשרים — ספקים','קייטרינג על האש גליל עליון']]},
+ super:{h:'🛒 סופרים קרובים',ph:[
+   ['סופרמרקט ביסוד המעלה (הקרוב)','סופרמרקט יסוד המעלה'],
+   ['רמי לוי / שופרסל / יוחננוף קרית שמונה','סופרמרקט קרית שמונה'],
+   ['סופר בראש פינה','סופרמרקט ראש פינה']]},
+};
+/* ponytail: כדי להוסיף ספק שגיל יביא — להדביק {n,phone,note} ב-EXTRA למטה */
+const EXTRA = {pizza:[],super:[],cater:[
+ {n:'בית מנדיס — צפת',phone:'077-410-8002',u:'https://mendis.co.il/mendis-catering',note:'כשר בד״ץ העדה החרדית. שבתות משפחתיות בשרי/חלבי, משלוח מחיפה עד מטולה. ✅ היחיד שכותב במפורש שמגיע אליכם — לוודא שפעיל בתאריכים.'},
+ {n:'הטאג׳ין — חצור',phone:'04-6118508',u:'https://tajin.rest.co.il/',note:'כ-10 דק׳. כשר למהדרין, מרוקאי ובשרים. אוכל מוכן בשישי 8:00–14:00.'},
+ {n:'פינת אוכל — עמיעד',phone:'054-4933622',u:'https://www.pinat-ochel.com/',note:'כ-15 דק׳. כשר, אוכל ביתי, קייטרינג בתיאום, אפשר גם לשבת שם כקבוצה (טלפון לקבוצות).'},
+ {n:'מאור השמן — קרית שמונה',phone:'054-5000003',u:'https://fat-maor.co.il/',note:'כשר למהדרין. אוכל מוכן לשבת משישי 8:00.'},
+ {n:'קייטרינג מוניטין — צפת',phone:'04-6821251',u:'https://monetin.wixsite.com/monetin',note:'כשר למהדרין. יריד אוכל לשבת בשישי 6:00–15:00. טל׳ נוסף 052-4683300.'},
+ {n:'התאנה המעופפת — ראש פינה',phone:'077-7970177',note:'כשר למהדרין. חלבי וטבעוני, מתאים לארוחות בוקר.'},
+]};
+
+const BIRDS = [
+ ['עגור אפור','Common crane','Common_crane','הכוכב של החולה. בחורף עשרות אלפים ממלאים את העמק, ובשקיעה מגיעים ללון באגם. קוראים בקול חצוצרה.'],
+ ['שקנאי לבן','Great white pelican','Great_white_pelican','נוחת בעדרים בסתיו ובאביב בדרך הנדידה. דגים בקבוצה.'],
+ ['קורמורן גדול','Great cormorant','Great_cormorant','צלול בחיפוש דגים, מייבש כנפיים פרושות על ענפים.'],
+ ['קורמורן ננסי','Pygmy cormorant','Pygmy_cormorant','קטן, חורף בחולה בהמוניו בלילות.'],
+ ['חסידה לבנה','White stork','White_stork','נודדת בלהקות ענק. בסתיו/אביב מכסה את שמי העמק.'],
+ ['חסידה שחורה','Black stork','Black_stork','יותר ביישנית ופחות נפוצה, נראית לעיתים בנדידה.'],
+ ['אנפה אפורה','Grey heron','Grey_heron','עומדת דוממת על שפת המים ומחכה לדג.'],
+ ['אנפה לבנה גדולה','Great egret','Great_egret','לבנה ואלגנטית עם צוואר מעוקל בצורת S.'],
+ ['אנפה ארגמנית','Purple heron','Purple_heron','מסתתרת בקנים ובצמחיית המים.'],
+ ['כפן לבן','Eurasian spoonbill','Eurasian_spoonbill','מקור שטוח כמו כף שהוא מנופף בצדדים כשהוא מחפש מזון במים.'],
+ ['מגלן חום','Glossy ibis','Glossy_ibis','מקור מעוקל, נראה כהה עם ברק מתכתי.'],
+ ['שלדג לבן-חזה','White-throated kingfisher','White-throated_kingfisher','כחול זוהר וחזה לבן, יושב על תיל או ענף.'],
+];
+const ANIMALS = [
+ ['תאו מים','Water buffalo','Water_buffalo','בעדר בשמורת החולה — "מנקי" הצמחיה.'],
+ ['נוטריה','Coypu','Coypu','מכרסם גדול ששוחה בתעלות וסביב האגם.'],
+ ['תן זהב','Golden jackal','Golden_jackal','יללות בלילה, נשמע בקלות סביב האחוזה.'],
+ ['חתול ביצות','Jungle cat','Jungle_cat','חתול בר, ביישן. החולה הוא אחד מבתי הגידול החשובים שלו בישראל.'],
+ ['חזיר בר','Wild boar','Wild_boar','נפוץ בגליל, יוצא בעיקר בלילה.'],
+];
+const PLANTS = [
+ ['פפירוס','Cyperus papyrus','Cyperus_papyrus','הגידול הטבעי היחיד שלו בישראל הוא בחולה. שדה פפירוס מרשים בשמורה.'],
+ ['קנה מצוי','Common reed','Phragmites','מקום מסתור ובית לציפורים באגמון.'],
+ ['אלון התבור','Quercus ithaburensis','Quercus_ithaburensis','עץ האלון האופייני בגליל.'],
+ ['אקליפטוס','Eucalyptus','Eucalyptus_camaldulensis','ניטע בראשית ההתיישבות לייבוש הביצות. נוף אופייני בעמק.'],
+ ['רקפת','Cyclamen','Cyclamen_persicum','פורחת בדצמבר–פברואר בין הסלעים. סמל הגליל.'],
+ ['נרקיס מצוי','Narcissus tazetta','Narcissus_tazetta','פורח בחורף בשטחים לחים.'],
+];
+
+const NATURE = [
+ ['❄️ עונת העגורים','דצמבר הוא שיא החורף בחולה: עגורים רבים, ובין הערביים מראה ההצבה על האגם.'],
+ ['🌧️ מזג אוויר','מצננים בלילות: הביאו מעילים, כובעים וכפפות לעגורים. ייתכנו גשמים ובוץ בשבילים.'],
+ ['🏞️ עמק החולה','עמק שהיה פעם אגם וביצות, יובש בשנות ה-50 ואז הושב בחלקו ב"אגמון".'],
+ ['⛰️ החרמון','ברקע — הר החרמון. בימים נקיים רואים אותו משדה אליעזר. אולי עם שלג.'],
+ ['💧 מקורות הירדן','הדן, החרמון (בניאס) והחצבאני מזינים את הירדן ואת עמק החולה — האזור הירוק והמים בצפון.'],
+ ['🌸 פרחי חורף','רקפות ונרקיסים כבר בדצמבר. כלניות בעיקר בינואר–פברואר.'],
+];
+
+const HIST = [
+ ['1882','ראש פינה — אחת המושבות החקלאיות הראשונות בגליל.'],
+ ['1883','יסוד המעלה — מההתיישבויות הראשונות בעמק החולה (עליית חובבי ציון), בימי הביצות והקדחת.'],
+ ['1920','הקרב בתל חי — טרומפלדור ועמיתיו, אירוע מכונן.'],
+ ['1952','שדה אליעזר נוסד על-ידי תושבים מיסוד המעלה וקרית שמונה ועולים חדשים (מצ׳כוסלובקיה, יוגוסלביה, פולין, רומניה). לפי הוויקיפדיה העברית נקרא על שם אליעזר (רוברט) רוטשילד.'],
+ ['שנות ה-50','ייבוש אגם החולה והביצות — מיזם ענק להפיכת העמק לשדות חקלאיים.'],
+ ['1964','הוקמה שמורת החולה — שמורת הטבע הראשונה בישראל, על שטח ביצה שנשמר.'],
+ ['שנות ה-90–2000','שיקום חלקי של החולה — "אגמון החולה", וחזרת הציפורים והעגורים הנודדים.'],
+];
+
+const SHOP0 = {
+ 'חמישי בערב — פיצות ותוספות':['5 פיצות משפחתיות (בערך אחת לכל 2–3 אנשים): 2 מרגריטה, השאר לבחור תוספות','2 סלטים גדולים (ירקות + שקית חסה מוכנה)','2 בקבוקי שתייה קלה','2 בקבוקי מים מינרליים'],
+ 'ארוחות בוקר — שישי ושבת (רשימה אחת)':['ביצים: 3–4 תבניות של 12 (כ-42), לחביתה/שקשוקה','לחם: 4 כיכרות + חבילת לחמניות (לשבת — פריזר או טרי מיום שישי)','גבינה לבנה ×3','קוטג׳ ×3','גבינה צהובה פרוסה ×1','פטה / לבנה ×2','טחינה','חומוס','חמאה','ריבה / ממרח שוקולד','מלפפונים 2.5 ק״ג','עגבניות 2.5 ק״ג','פלפלים ×2','בצל','עשבי תיבול','טונה','זיתים','יוגורט טבעי ×3 + גרנולה','חלב: 3–4 קרטונים','מיץ תפוזים'],
+ 'על האש (שבת אחרי צאת השבת)':['פרגיות 2 ק״ג','קבב 1.25 ק״ג','סטייקים (אנטריקוט/סינטה) 1.25 ק״ג','שיפודי חזה עוף 1 ק״ג','נקניקיות לילדים','פיתות ובגטים: 3 חבילות','סלטים: חומוס, טחינה, מטבוחה, חציל, כרוב, סלט ירקות גדול','תפוחי אדמה ובטטות (בנייר כסף)','תירס','בצל לגריל','פחמים: 2 שקים','מצית / נוזל הדלקה','תבניות אלומיניום','מלקחיים','מלח ותבלינים','יין, בירה ושתייה קלה','קינוח: עוגה או עוגיות','פירות'],
+ 'נשנושים וקפה לכל הסופ״ש':['קפה נמס','קפה שחור / טורקי','תה','סוכר וממתיק','צ׳יפס','במבה','ביסלי','בייגלה','אגוזים וגרעינים','שוקולד','ופלים','עוגיות','קלמנטינות','תפוחים','בננות'],
+ 'חד-פעמי ובסיס':['צלחות','כוסות','סכו״ם','מפיות','שקיות זבל','סבון כלים','מגבות נייר','נייר כסף','נרות שבת'],
+};
+
+/* ===== אחסון מקומי ===== */
+const st = {
+  get(k,d){try{const v=localStorage.getItem('kn_'+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('kn_'+k,JSON.stringify(v))}catch(e){}}
+};
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===== רינדור ===== */
+const TABS = [['plan','📅 תוכנית'],['attr','🎯 אטרקציות'],['rest','🍴 מסעדות'],['supp','🍕 ספקי אוכל'],['shop','🛒 קניות'],['nature','🌄 טבע ונוף'],['birds','🦆 מגדיר'],['hist','📜 היסטוריה'],['hotel','🏡 האחוזה']];
+const R = {};
+
+R.plan = () => `<h2>תוכנית הטיול</h2><p class="sub">${DATES}</p>` +
+  PLAN.map(p=>`<div class="card day"><h3>${p.d}</h3>${p.warn?`<div class="warn">⚠️ ${esc(p.warn)}</div>`:''}${p.slots.map(s=>`<div class="slot"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join('')}</div>`).join('');
+
+const cards = (arr) => arr.map(a=>`<div class="card"><h3>${esc(a.n)}</h3>${a.t.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}<p>${esc(a.d)}</p><div class="links">${a.u?`<a href="${a.u}" target="_blank" rel="noopener">🌐 אתר</a>`:''}${L(a.q)}</div></div>`).join('');
+
+R.attr = () => `<h2>אטרקציות באזור</h2><p class="sub">סביב שדה אליעזר, עד כ-30 דקות נסיעה</p><div class="warn">⚠️ באזור הצפון המצב הביטחוני יכול להשתנות — לפני כל נסיעה לבדוק סגירות והנחיות פיקוד העורף. שעות ומחירים — לאמת באתר. 🛶 הקיאקים בירדן סגורים עד אפריל.</div><h3>⭐ מתאימות לקבוצה מעורבת — כולן פתוחות בשבת</h3>${cards(ATTR.filter(a=>a.top))}<h3>עוד באזור</h3>${cards(ATTR.filter(a=>!a.top))}`;
+
+R.rest = () => `<h2>מסעדות</h2><p class="sub">המלצות להתחלה. הרשימה תעודכן.</p>${cards(REST)}<div class="card"><h3>חיפוש מהיר במפה</h3><div class="links">${REST_SEARCH.map(r=>`<a href="${maps(r[1])}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div></div>`;
+
+R.supp = () => `<h2>ספקי אוכל</h2><p class="sub">פיצריות, קייטרינג וסופרים. שלחו לי רשימה ואוסיף.</p>` +
+  Object.keys(SUPP).map(k=>`<div class="card"><h3>${SUPP[k].h}</h3>${EXTRA[k].map(e=>`<p><b>${esc(e.n)}</b> ${e.phone?`<a href="tel:${esc(e.phone)}">📞 ${esc(e.phone)}</a>`:''} ${e.u?`<a href="${e.u}" target="_blank" rel="noopener">🌐</a>`:''}<br>${esc(e.note||'')}</p>`).join('')}<div class="links">${SUPP[k].ph.map(r=>`<a href="${maps(r[1])}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div></div>`).join('') +
+  `<div class="warn">לכ-16 איש: אצל כולם מלבד בית מנדיס לבדוק בטלפון אם יש משלוח ומתי מגיעים בשישי. לא נמצא ספק מאומת לחבילות מנגל או לסלי בוקר באזור — את על האש ובוקר קונים מהסופר.</div><div class="warn">בשישי והשבת רוב העסקים סגורים — קניות והזמנות מראש עד יום שישי בצהריים.</div>`;
+
+R.shop = () => {
+  const data = st.get('shop2', SHOP0);
+  const done = st.get('done', {});
+  return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה, הוסיפו פריטים. נשמר במכשיר.</p><div class="shop">` +
+   Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><span class="${done[g+'|'+it]?'done':''}">${esc(it)}</span><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
+};
+const keys = () => Object.keys(st.get('shop2', SHOP0));
+window.tick=(gi,i,v)=>{const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{});c[g+'|'+d[g][i]]=v;st.set('done',c);render()};
+window.delItem=(gi,i)=>{const d=st.get('shop2',SHOP0);d[keys()[gi]].splice(i,1);st.set('shop2',d);render()};
+window.addItem=(e,gi)=>{e.preventDefault();const v=e.target.querySelector('input').value.trim();if(!v)return;const d=st.get('shop2',SHOP0);d[keys()[gi]].push(v);st.set('shop2',d);render()};
+
+R.nature = () => `<h2>טבע ונוף בצפון</h2><p class="sub">מה כדאי לדעת לפני</p>` + NATURE.map(n=>`<div class="card"><h3>${n[0]}</h3><p>${esc(n[1])}</p></div>`).join('');
+
+const gallery = (arr,icon) => `<div class="grid">${arr.map(b=>`<div class="card bird"><div class="im" data-w="${esc(b[2])}">${icon}</div><div class="tx"><h3>${esc(b[0])}</h3><small>${esc(b[1])}</small><p>${esc(b[3])}</p></div></div>`).join('')}</div>`;
+R.birds = () => `<h2>מגדיר ציפורים, חי וצומח</h2><p class="sub">מה אפשר לראות באגמון ובעמק (חורף). תמונות מוויקיפדיה, כשיש אינטרנט.</p><h3>🦆 ציפורים</h3>${gallery(BIRDS,'🐦')}<h3>🐾 בעלי חיים</h3>${gallery(ANIMALS,'🐾')}<h3>🌿 צמחים</h3>${gallery(PLANTS,'🌱')}`;
+
+R.hist = () => `<h2>היסטוריה מקומית</h2><p class="sub">יסוד המעלה · שדה אליעזר · עמק החולה</p><div class="card"><ul class="tl">${HIST.map(h=>`<li><b>${esc(h[0])}</b> — ${esc(h[1])}</li>`).join('')}</ul></div><div class="warn">התאריכים מסוכמים מתוך ידע כללי ומהוויקיפדיה, ויש לאמת לפני שמצטטים.</div>`;
+
+R.hotel = () => {
+  const full = `${HOTEL.name} ${HOTEL.place}`;
+  return `<h2>${esc(HOTEL.name)}</h2><p class="sub">${esc(HOTEL.place)}</p><div class="card"><div class="links">${L(full,'📍 פתח במפה')}</div><h3 style="margin-top:14px">הערות (קוד כניסה, טלפון מארח, שעות…)</h3><textarea id="hn" placeholder="כתבו כאן, נשמר במכשיר">${esc(st.get('hotelnote',''))}</textarea></div>`;
+};
+
+function render(){
+  const h=(location.hash||'#plan').slice(1), k=R[h]?h:'plan';
+  document.getElementById('main').innerHTML=R[k]();
+  document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));
+  const on=document.querySelector('#nav a.on'); if(on)on.scrollIntoView({inline:'center',block:'nearest'});
+  const hn=document.getElementById('hn'); if(hn)hn.oninput=()=>st.set('hotelnote',hn.value);
+  document.querySelectorAll('.im[data-w]').forEach(el=>fetchImg(el));
+  scrollTo(0,0);
+}
+const imgCache={};
+async function fetchImg(el){
+  const t=el.dataset.w;
+  try{
+    imgCache[t]=imgCache[t]||fetch('https://en.wikipedia.org/api/rest_v1/page/summary/'+t).then(r=>r.json());
+    const j=await imgCache[t];
+    const src=j.thumbnail&&j.thumbnail.source;
+    if(src){const i=new Image();i.alt='';i.loading='lazy';i.src=src;i.onload=()=>{el.textContent='';el.appendChild(i)}}
+  }catch(e){/* נשאר האייקון */}
+}
+window.go=k=>{location.hash=k};
+document.getElementById('nav').innerHTML=TABS.map(t=>`<a href="#${t[0]}" data-k="${t[0]}">${t[1]}</a>`).join('');
+addEventListener('hashchange',render);
+render();
+</script>
+</body>
+</html>
