@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>טיול משפחת קרן בצפון</title>
 <meta name="theme-color" content="#2f5d3a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,13 +39,36 @@ h2{margin:6px 0 4px}
 .bird small{color:var(--mut);direction:ltr;display:block}
 .shop label{display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px dashed var(--line)}
 .shop input[type=checkbox]{width:20px;height:20px}
-.shop .it{flex:1;min-width:0;border:0;border-bottom:1px dashed transparent;background:transparent;font:inherit;color:inherit;padding:2px 4px}.shop .it:focus{border-bottom-color:var(--g);outline:0}.shop input[type=text].qty{width:76px;flex:none;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;padding:3px 6px;text-align:center}.shop .done{text-decoration:line-through;color:var(--mut)}
+.shop textarea.it{min-height:0;resize:none;overflow:hidden;line-height:1.4;width:auto}.shop .it{flex:1;min-width:0;border:0;border-bottom:1px dashed transparent;background:transparent;font:inherit;color:inherit;padding:2px 4px}.shop .it:focus{border-bottom-color:var(--g);outline:0}.shop input[type=text].qty{width:76px;flex:none;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;padding:3px 6px;text-align:center}.shop .done{text-decoration:line-through;color:var(--mut)}
 .shop form{display:flex;gap:6px;margin-top:8px}
 .shop input[type=text],textarea{flex:1;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
 textarea{width:100%;min-height:90px}
 .x{margin-inline-start:auto;background:none;border:0;color:var(--mut);cursor:pointer;font-size:1.1rem}
 .tl li{margin:6px 0}
 section{display:none}section.on{display:block}
+
+@media(max-width:600px){
+ body{font-size:16px}
+ header{padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top))}
+ header h1{font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .hotel{padding:10px 14px;min-height:44px}
+ nav{top:60px;padding:6px 8px}
+ nav a{padding:10px 14px;font-size:.95rem}
+ main{padding:12px 12px calc(24px + env(safe-area-inset-bottom))}
+ .card{padding:12px;border-radius:12px}
+ .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+ .bird .tx{padding:8px 10px}.bird .tx h3{font-size:.98rem}.bird .tx p{font-size:.86rem;margin:4px 0 0}
+ .slot{flex-direction:column;gap:0}.slot b{min-width:0}
+ .links a,.btn{padding:10px 14px;font-size:.92rem}
+ .shop label{flex-wrap:wrap;gap:8px 10px;padding:8px 0}
+ .shop input[type=checkbox]{width:26px;height:26px;flex:none}
+ .shop textarea.it{flex:1 1 0;min-width:0;font-size:16px}
+ .shop input[type=text].qty{width:84px;min-height:40px;font-size:16px}
+ .x{min-width:40px;min-height:40px;font-size:1.3rem}
+ .shop form input[type=text]{min-height:44px;font-size:16px}
+ textarea{font-size:16px}
+}
+@media(max-width:360px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -263,7 +286,7 @@ R.shop = () => {
   const data = st.get('shop2', SHOP0);
   const done = st.get('done', {}), qty = st.get('qty', {});
   return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה. לחיצה על שם או כמות מאפשרת לערוך אותם. נשמר במכשיר.</p><div class="shop">` +
-   Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><input type="text" class="it ${done[g+'|'+it]?'done':''}" value="${esc(it)}" aria-label="שם וכמות" onchange="editItem(${gi},${i},this.value)"><input type="text" class="qty" inputmode="decimal" placeholder="כמות" value="${esc(qty[g+'|'+it]||'')}" aria-label="כמות" onchange="setQty(${gi},${i},this.value)"><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
+   Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><textarea rows="1" class="it ${done[g+'|'+it]?'done':''}" aria-label="שם הפריט" onchange="editItem(${gi},${i},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${esc(it)}</textarea><input type="text" class="qty" inputmode="decimal" placeholder="כמות" value="${esc(qty[g+'|'+it]||'')}" aria-label="כמות" onchange="setQty(${gi},${i},this.value)"><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
 };
 const keys = () => Object.keys(st.get('shop2', SHOP0));
 window.tick=(gi,i,v)=>{const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{});c[g+'|'+d[g][i]]=v;st.set('done',c);render()};
@@ -289,6 +312,7 @@ function render(){
   document.getElementById('main').innerHTML=R[k]();
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));
   const on=document.querySelector('#nav a.on'); if(on)on.scrollIntoView({inline:'center',block:'nearest'});
+  document.querySelectorAll('textarea.it').forEach(t=>{const f=()=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'};f();t.addEventListener('input',f)});
   const hn=document.getElementById('hn'); if(hn)hn.oninput=()=>st.set('hotelnote',hn.value);
   scrollTo(0,0);
 }
