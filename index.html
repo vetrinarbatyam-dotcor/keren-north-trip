@@ -273,11 +273,11 @@ const st = {
 
 /* ===== סנכרון בין מכשירים (Firebase Realtime Database, תוכנית חינמית, נתיב /trip בלבד) =====
    done/qty: ערך לכל פריט (המפתח מקודד, כי Firebase לא מקבל / . # $ [ ] במפתח) — כתיבה בודדת, בלי דריסה בין אנשים.
-   shop2 (מבנה הרשימות) והערות האחוזה: אחרון כותב מנצח. ponytail: אין תור לעבודה בלי רשת, פעולות בלי אינטרנט לא נשמרות בענן. */
+   shop2 (מבנה הרשימות) אחרון כותב מנצח. ponytail: אין תור לעבודה בלי רשת, פעולות בלי אינטרנט לא נשמרות בענן. */
 const DB='https://north-6b634-default-rtdb.firebaseio.com/trip';
 const b64=k=>btoa(unescape(encodeURIComponent(k))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
 const unb64=k=>{k=k.replace(/-/g,'+').replace(/_/g,'/');while(k.length%4)k+='=';return decodeURIComponent(escape(atob(k)))};
-let busy=0,lastW=0,needRender=false,hT;
+let busy=0,lastW=0,needRender=false;
 const sy=ok=>{const e=document.getElementById('sy');if(e){e.className=ok?'ok':'bad';e.title=ok?'מסונכרן':'אין סנכרון'}};
 const send=async(path,method,body)=>{busy++;lastW=Date.now();try{const r=await fetch(DB+path+'.json',{method,body:JSON.stringify(body)});sy(r.ok)}catch(e){sy(false)}finally{busy--;lastW=Date.now()}};
 const encMap=(m,conv)=>{const o={};for(const k in m){const v=conv(m[k]);if(v!==null&&v!==undefined)o[b64(k)]=v}return o};
@@ -291,19 +291,18 @@ st.set=(k,v)=>{
     for(const f in o){if(!(f in v))p[b64(f)]=null}
     if(Object.keys(p).length)send('/'+k,'PATCH',p);
   }else if(k==='shop2')send('/shop2','PUT',JSON.stringify(v));
-  else if(k==='hotelnote'){clearTimeout(hT);hT=setTimeout(()=>send('/hotelnote','PUT',v),800)}
 };
-const dec=o=>{const m={};for(const k in (o||{}))m[unb64(k)]=o[k];return m};
+const dec=(o,ok)=>{const m={};if(o&&typeof o==='object')for(const k in o){let n;try{n=unb64(k)}catch(e){continue}if(n==='__proto__'||n==='constructor'||n==='prototype'||n.length>400||!ok(o[k]))continue;m[n]=o[k]}return m};
+const okShop=o=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).length<=40&&Object.keys(o).every(g=>g.length<=200&&g!=='__proto__'&&Array.isArray(o[g])&&o[g].length<=200&&o[g].every(i=>typeof i==='string'&&i.length<=400));
 async function pull(first){
   if(busy||Date.now()-lastW<2500)return;
   try{
     const r=await fetch(DB+'.json');if(!r.ok)throw 0;
     const d=await r.json();sy(true);
-    if(d===null){if(first)send('','PATCH',{shop2:JSON.stringify(st.get('shop2',SHOP0)),done:encMap(st.get('done',{}),x=>x?true:null),qty:encMap(st.get('qty',{}),x=>x),hotelnote:st.get('hotelnote','')});return}
+    if(d===null){if(first)send('','PATCH',{shop2:JSON.stringify(st.get('shop2',SHOP0)),done:encMap(st.get('done',{}),x=>x?true:null),qty:encMap(st.get('qty',{}),x=>x)});return}
     const put=(k,v)=>{if(JSON.stringify(st.get(k,null))!==JSON.stringify(v)){_set(k,v);needRender=true}};
-    if(d.shop2)put('shop2',JSON.parse(d.shop2));
-    put('done',dec(d.done));put('qty',dec(d.qty));
-    if(typeof d.hotelnote==='string')put('hotelnote',d.hotelnote);
+    if(typeof d.shop2==='string'){let sh=null;try{sh=JSON.parse(d.shop2)}catch(e){}if(okShop(sh))put('shop2',sh)}
+    put('done',dec(d.done,v=>v===true));put('qty',dec(d.qty,v=>typeof v==='string'&&v.length<=60));
     if(needRender&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||'')){needRender=false;render()}
   }catch(e){sy(false)}
 }
@@ -377,7 +376,7 @@ R.hist = () => `<h2>היסטוריה מקומית</h2><p class="sub">ראש פי
 
 R.hotel = () => {
   const full = `${HOTEL.name} ${HOTEL.place}`;
-  return `<h2>${esc(HOTEL.name)}</h2><p class="sub">${esc(HOTEL.place)}</p><div class="card"><div class="links">${L(full,'📍 פתח במפה')}</div><h3 style="margin-top:14px">הערות (קוד כניסה, טלפון מארח, שעות…)</h3><textarea id="hn" placeholder="כתבו כאן, נשמר במכשיר">${esc(st.get('hotelnote',''))}</textarea></div>`;
+  return `<h2>${esc(HOTEL.name)}</h2><p class="sub">${esc(HOTEL.place)}</p><div class="card"><div class="links">${L(full,'📍 פתח במפה')}</div><h3 style="margin-top:14px">הערות אישיות (נשמרות רק במכשיר הזה)</h3><textarea id="hn" placeholder="נשמר רק במכשיר הזה ולא מסונכרן. אל תכתבו כאן קודים רגישים.">${esc(st.get('hotelnote',''))}</textarea></div>`;
 };
 
 function render(top){
