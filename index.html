@@ -75,12 +75,13 @@ section{display:none}section.on{display:block}
 .cnt{font-size:.8rem;color:var(--mut);font-weight:400}
 .shop span.it{flex:1;min-width:0;padding:2px 4px}
 .shop .src{display:block;color:var(--mut);font-size:.75rem}
+#sy{width:10px;height:10px;border-radius:50%;background:#9aa;flex:none}#sy.ok{background:#5fd16a}#sy.bad{background:#e0a050}
 </style>
 </head>
 <body>
 <header>
   <h1>🌿 טיול משפחת קרן · צפון</h1>
-  <button class="hotel" onclick="go('hotel')">🏡 האחוזה</button>
+  <i id="sy" class="bad" title="אין סנכרון"></i><button class="hotel" onclick="go('hotel')">🏡 האחוזה</button>
 </header>
 <nav id="nav"></nav>
 <main id="main"></main>
@@ -269,6 +270,43 @@ const st = {
   get(k,d){try{const v=localStorage.getItem('kn_'+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem('kn_'+k,JSON.stringify(v))}catch(e){}}
 };
+
+/* ===== סנכרון בין מכשירים (Firebase Realtime Database, תוכנית חינמית, נתיב /trip בלבד) =====
+   done/qty: ערך לכל פריט (המפתח מקודד, כי Firebase לא מקבל / . # $ [ ] במפתח) — כתיבה בודדת, בלי דריסה בין אנשים.
+   shop2 (מבנה הרשימות) והערות האחוזה: אחרון כותב מנצח. ponytail: אין תור לעבודה בלי רשת, פעולות בלי אינטרנט לא נשמרות בענן. */
+const DB='https://north-6b634-default-rtdb.firebaseio.com/trip';
+const b64=k=>btoa(unescape(encodeURIComponent(k))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const unb64=k=>{k=k.replace(/-/g,'+').replace(/_/g,'/');while(k.length%4)k+='=';return decodeURIComponent(escape(atob(k)))};
+let busy=0,lastW=0,needRender=false,hT;
+const sy=ok=>{const e=document.getElementById('sy');if(e){e.className=ok?'ok':'bad';e.title=ok?'מסונכרן':'אין סנכרון'}};
+const send=async(path,method,body)=>{busy++;lastW=Date.now();try{const r=await fetch(DB+path+'.json',{method,body:JSON.stringify(body)});sy(r.ok)}catch(e){sy(false)}finally{busy--;lastW=Date.now()}};
+const encMap=(m,conv)=>{const o={};for(const k in m){const v=conv(m[k]);if(v!==null&&v!==undefined)o[b64(k)]=v}return o};
+const _set=st.set;
+st.set=(k,v)=>{
+  const o=(k==='done'||k==='qty')?st.get(k,{}):null;
+  _set(k,v);
+  if(k==='done'||k==='qty'){
+    const conv=k==='done'?(x=>x?true:null):(x=>x),p={};
+    for(const f in v){if(v[f]!==o[f])p[b64(f)]=conv(v[f])}
+    for(const f in o){if(!(f in v))p[b64(f)]=null}
+    if(Object.keys(p).length)send('/'+k,'PATCH',p);
+  }else if(k==='shop2')send('/shop2','PUT',JSON.stringify(v));
+  else if(k==='hotelnote'){clearTimeout(hT);hT=setTimeout(()=>send('/hotelnote','PUT',v),800)}
+};
+const dec=o=>{const m={};for(const k in (o||{}))m[unb64(k)]=o[k];return m};
+async function pull(first){
+  if(busy||Date.now()-lastW<2500)return;
+  try{
+    const r=await fetch(DB+'.json');if(!r.ok)throw 0;
+    const d=await r.json();sy(true);
+    if(d===null){if(first)send('','PATCH',{shop2:JSON.stringify(st.get('shop2',SHOP0)),done:encMap(st.get('done',{}),x=>x?true:null),qty:encMap(st.get('qty',{}),x=>x),hotelnote:st.get('hotelnote','')});return}
+    const put=(k,v)=>{if(JSON.stringify(st.get(k,null))!==JSON.stringify(v)){_set(k,v);needRender=true}};
+    if(d.shop2)put('shop2',JSON.parse(d.shop2));
+    put('done',dec(d.done));put('qty',dec(d.qty));
+    if(typeof d.hotelnote==='string')put('hotelnote',d.hotelnote);
+    if(needRender&&!/INPUT|TEXTAREA/.test((document.activeElement||{}).tagName||'')){needRender=false;render()}
+  }catch(e){sy(false)}
+}
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ===== רינדור ===== */
@@ -342,19 +380,21 @@ R.hotel = () => {
   return `<h2>${esc(HOTEL.name)}</h2><p class="sub">${esc(HOTEL.place)}</p><div class="card"><div class="links">${L(full,'📍 פתח במפה')}</div><h3 style="margin-top:14px">הערות (קוד כניסה, טלפון מארח, שעות…)</h3><textarea id="hn" placeholder="כתבו כאן, נשמר במכשיר">${esc(st.get('hotelnote',''))}</textarea></div>`;
 };
 
-function render(){
+function render(top){
   const h=(location.hash||'#plan').slice(1), k=R[h]?h:'plan';
   document.getElementById('main').innerHTML=R[k]();
   document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));
   const on=document.querySelector('#nav a.on'); if(on)on.scrollIntoView({inline:'center',block:'nearest'});
   document.querySelectorAll('textarea.it').forEach(t=>{const f=()=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'};f();t.addEventListener('input',f)});
   const hn=document.getElementById('hn'); if(hn)hn.oninput=()=>st.set('hotelnote',hn.value);
-  scrollTo(0,0);
+  if(top===true)scrollTo(0,0);
 }
 window.go=k=>{location.hash=k};
 document.getElementById('nav').innerHTML=TABS.map(t=>`<a href="#${t[0]}" data-k="${t[0]}">${t[1]}</a>`).join('');
-addEventListener('hashchange',render);
+addEventListener('hashchange',()=>render(true));
 render();
+pull(true);setInterval(pull,6000);
+addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 </script>
 </body>
 </html>
