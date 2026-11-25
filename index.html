@@ -69,6 +69,12 @@ section{display:none}section.on{display:block}
  textarea{font-size:16px}
 }
 @media(max-width:360px){.grid{grid-template-columns:1fr}}
+.mode{display:flex;gap:6px;margin:0 0 12px;background:var(--g2);padding:4px;border-radius:12px}
+.mode button{flex:1;border:0;border-radius:9px;padding:10px 6px;font:inherit;font-weight:600;background:transparent;color:var(--g);cursor:pointer}
+.mode button.on{background:var(--g);color:#fff}
+.cnt{font-size:.8rem;color:var(--mut);font-weight:400}
+.shop span.it{flex:1;min-width:0;padding:2px 4px}
+.shop .src{display:block;color:var(--mut);font-size:.75rem}
 </style>
 </head>
 <body>
@@ -282,12 +288,41 @@ R.supp = () => `<h2>ספקי אוכל</h2><p class="sub">פיצריות, קיי�
   Object.keys(SUPP).map(k=>`<div class="card"><h3>${SUPP[k].h}</h3>${EXTRA[k].map(e=>`<p><b>${esc(e.n)}</b> ${e.phone?`<a href="tel:${esc(e.phone)}">📞 ${esc(e.phone)}</a>`:''} ${e.u?`<a href="${e.u}" target="_blank" rel="noopener">🌐</a>`:''}<br>${esc(e.note||'')}</p>`).join('')}<div class="links">${SUPP[k].ph.map(r=>`<a href="${maps(r[1])}" target="_blank" rel="noopener">${esc(r[0])}</a>`).join('')}</div></div>`).join('') +
   `<div class="warn">לכ-16 איש: אצל כולם מלבד בית מנדיס לבדוק בטלפון אם יש משלוח ומתי מגיעים בשישי. לא נמצא ספק מאומת לחבילות מנגל או לסלי בוקר באזור — את על האש ובוקר קונים מהסופר.</div><div class="warn">בשישי והשבת רוב העסקים סגורים — קניות והזמנות מראש עד יום שישי בצהריים.</div>`;
 
-R.shop = () => {
+const shopByMeal = () => {
   const data = st.get('shop2', SHOP0);
   const done = st.get('done', {}), qty = st.get('qty', {});
-  return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה. לחיצה על שם או כמות מאפשרת לערוך אותם. נשמר במכשיר.</p><div class="shop">` +
+  return `<div class="shop">` +
    Object.keys(data).map((g,gi)=>`<div class="card"><h3>${esc(g)}</h3>${data[g].map((it,i)=>`<label><input type="checkbox" ${done[g+'|'+it]?'checked':''} onchange="tick(${gi},${i},this.checked)"><textarea rows="1" class="it ${done[g+'|'+it]?'done':''}" aria-label="שם הפריט" onchange="editItem(${gi},${i},this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">${esc(it)}</textarea><input type="text" class="qty" inputmode="decimal" placeholder="כמות" value="${esc(qty[g+'|'+it]||'')}" aria-label="כמות" onchange="setQty(${gi},${i},this.value)"><button type="button" class="x" onclick="delItem(${gi},${i})" aria-label="מחק">✕</button></label>`).join('')}<form onsubmit="addItem(event,${gi})"><input type="text" placeholder="הוספת פריט" required><button class="btn">הוסף</button></form></div>`).join('') + `</div>`;
 };
+
+/* רשימה מרוכזת לפי נושא: סיווג לפי מילות מפתח. הסדר קובע — הראשון שמתאים מנצח. פריט שלא זוהה נכנס ל"אחר". */
+const CATS = [
+ ['🍕 הזמנות מוכנות',['פיצ']],
+ ['🥩 בשר ועוף',['פרגיות','קבב','סטייק','שיפוד','נקניק','בשר','עוף','אנטריקוט']],
+ ['🧀 חלב, ביצים וגבינות',['ביצים','גבינ','קוטג','פטה','לבנה','יוגורט','חלב','חמאה']],
+ ['🥖 לחם ומאפים',['לחם','חלות','לחמני','פית','בגט']],
+ ['🫙 ממרחים, סלטים מוכנים ושימורים',['חומוס','טחינה','מטבוחה','חציל','כרוב','ריבה','ממרח','טונה','זיתים','רטב']],
+ ['🥬 ירקות ופירות',['מלפפונ','עגבניות','פלפל','בצל','עשבי','ירקות','חסה','סלט','תפוחי אדמה','בטטות','תירס','קלמנטינ','תפוחים','בננות','פירות']],
+ ['🔥 ציוד מנגל',['פחמ','מצית','הדלקה','תבניות','מלקחיים','מלח','תבלינים']],
+ ['🥤 שתייה, קפה ותה',['שתייה','מים','מיץ','יין','בירה','קפה','תה','סוכר']],
+ ['🍿 נשנושים ומתוקים',['צ׳יפס','במבה','ביסלי','בייגלה','אגוזים','גרעינים','שוקולד','ופלים','עוגיות','עוגה','קינוח']],
+ ['🧻 חד-פעמי ובסיס',['צלחות','כוסות','סכו','מפיות','שקיות','סבון','מגבות','נייר כסף','נרות']],
+ ['📦 אחר',[]],
+];
+const catOf = it => (CATS.find(c=>c[1].some(k=>it.includes(k)))||CATS[CATS.length-1])[0];
+const shopByTopic = () => {
+  const data = st.get('shop2', SHOP0), done = st.get('done', {}), qty = st.get('qty', {});
+  const by = {}; CATS.forEach(c=>by[c[0]]=[]);
+  Object.keys(data).forEach((g,gi)=>data[g].forEach((it,i)=>by[catOf(it)].push({g,gi,it,i})));
+  return `<div class="shop">`+CATS.filter(c=>by[c[0]].length).map(c=>{
+    const rows=by[c[0]], n=rows.filter(r=>done[r.g+'|'+r.it]).length;
+    return `<div class="card"><h3>${c[0]} <span class="cnt">${n}/${rows.length}</span></h3>${rows.map(r=>`<label><input type="checkbox" ${done[r.g+'|'+r.it]?'checked':''} onchange="tick(${r.gi},${r.i},this.checked)"><span class="it ${done[r.g+'|'+r.it]?'done':''}">${esc(r.it)}<small class="src">${esc(r.g)}</small></span><input type="text" class="qty" inputmode="decimal" placeholder="כמות" value="${esc(qty[r.g+'|'+r.it]||'')}" aria-label="כמות" onchange="setQty(${r.gi},${r.i},this.value)"></label>`).join('')}</div>`}).join('')+`</div>`;
+};
+R.shop = () => {
+  const m = st.get('shopmode','meal');
+  return `<h2>רשימות קניות</h2><p class="sub">סמנו מה נקנה. נשמר במכשיר.</p><div class="mode" role="tablist"><button class="${m==='meal'?'on':''}" onclick="setMode('meal')">🍽️ לפי ארוחות</button><button class="${m==='topic'?'on':''}" onclick="setMode('topic')">🧺 מרוכז לפי נושא</button></div>`+(m==='topic'?shopByTopic():shopByMeal());
+};
+window.setMode=m=>{st.set('shopmode',m);render()};
 const keys = () => Object.keys(st.get('shop2', SHOP0));
 window.tick=(gi,i,v)=>{const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{});c[g+'|'+d[g][i]]=v;st.set('done',c);render()};
 window.editItem=(gi,i,v)=>{v=v.trim();const d=st.get('shop2',SHOP0),g=keys()[gi],c=st.get('done',{}),o=d[g][i];if(!v){return render()}d[g][i]=v;if(c[g+'|'+o]){delete c[g+'|'+o];c[g+'|'+v]=true;st.set('done',c)}const q=st.get('qty',{});if(q[g+'|'+o]){q[g+'|'+v]=q[g+'|'+o];delete q[g+'|'+o];st.set('qty',q)}st.set('shop2',d);render()};
